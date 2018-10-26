@@ -1,109 +1,231 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-  <head>
-    <title>JQVMap - Russia Map</title>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <link href="jqvmap/css/jqvmap.css" media="screen" rel="stylesheet" type="text/css" />    
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
-    <script src="jqvmap/js/jquery.vmap.js" type="text/javascript"></script>
-    <script src="jqvmap/js/maps/jquery.vmap.russia.js" type="text/javascript"></script>
-	
-    
-	<script type="text/javascript">
-	// Массив всех объектов	
-	var data_obj = {
-		'no': ['Объект 1', 'Объект 2'],
-		'kr': ['Объект 3', 'Объект 4', 'Объект 5'],
-		'ir': ['Объект 6', 'Объект 7', 'Объект 8']
-	};
-	
-	colorRegion = '#1076C8'; // Цвет всех регионов
-	focusRegion = '#FF9900'; // Цвет подсветки регионов при наведении на объекты из списка
-	selectRegion = '#0A4C82'; // Цвет изначально подсвеченных регионов
-	
-	highlighted_states = {};
-	
-	// Массив подсвечиваемых регионов, указанных в массиве data_obj
-	for(iso in data_obj){
-		highlighted_states[iso] = selectRegion;
-	}
-	
-	$(document).ready(function() {
-		$('#vmap').vectorMap({
-		    map: 'russia',
-		    backgroundColor: '#ffffff',
-			borderColor: '#ffffff',
-			borderWidth: 2,
-		    color: colorRegion,
-			colors: highlighted_states,			
-		    hoverOpacity: 0.7,		    
-		    enableZoom: true,
-		    showTooltip: true,			
-			
-			// Отображаем объекты если они есть
-			onLabelShow: function(event, label, code){
-				name = '<strong>'+label.text()+'</strong><br>';				
-				if(data_obj[code]){
-					list_obj = '<ul>';
-					for(ob in data_obj[code]){					
-						list_obj += '<li>'+data_obj[code][ob]+'</li>';
-					}
-					list_obj += '</ul>';
-				}else{
-					list_obj = '';
-				}				
-				label.html(name + list_obj);				
-				list_obj = '';				
-			},			
-			// Клик по региону
-			onRegionClick: function(element, code, region){
-				alert(region+' - ' +code);
-			}			
-		});		
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Примеры. Регионы</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <script src="https://api-maps.yandex.ru/2.1-dev/?lang=ru_RU" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://yastatic.net/bootstrap/3.3.4/css/bootstrap.min.css"/>
+    <script src="https://yastatic.net/jquery/2.2.3/jquery.min.js"></script>
+    <script src="https://yastatic.net/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script src="regions.js" type="text/javascript"></script>
+    <style>
 		
-	});
-	// Выводим список объектов из массива
-	$(document).ready(function() {
-		for(region in data_obj){
-			for(obj in data_obj[region]){
-				$('.list-object').append('<li><a href="'+selectRegion+'" id="'+region+'" class="focus-region">'+data_obj[region][obj]+' ('+region+')</a></li>');
-			}
-		}
-	});
+		
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head><body>
+<div id="map">
+</div>
+</body>
+
+<script>
+	var REGIONS_DATA = {
+        region: {
+            title: 'Регион',
+            items: [{
+                id: '001',
+                title: 'Страны мира'
+            }, {
+                id: 'BY',
+                title: 'Беларусь'
+            }, {
+                id: 'KZ',
+                title: 'Казахстан'
+            }, {
+                id: 'RU',
+                title: 'Россия'
+            }, {
+                id: 'TR',
+                title: 'Турция'
+            }, {
+                id: 'UA',
+                title: 'Украина'
+            }]
+        },
+        lang: {
+            title: 'Язык',
+            items: [{
+                id: 'en',
+                title: 'Английский'
+            }, {
+                id: 'be',
+                title: 'Белорусский'
+            }, {
+                id: 'kk',
+                title: 'Казахский'
+            }, {
+                id: 'ru',
+                title: 'Русский'
+            }, {
+                id: 'tr',
+                title: 'Турецкий'
+            }, {
+                id: 'uk',
+                title: 'Украинский'
+            }]
+        },
+        quality: {
+            title: 'Точность границ',
+            items: [{
+                id: '0',
+                title: '0'
+            }, {
+                id: '1',
+                title: '1'
+            }, {
+                id: '2',
+                title: '2'
+            }, {
+                id: '3',
+                title: '3'
+            }]
+        }
+    },
+    // Шаблон html-содержимого макета.
+    optionsTemplate = [
+        '<div style="line-height: 34px; background-color: #80808080;" id="regions-params">',
+        '{% for paramName, param in data.params %}',
+        '{% for key, value in state.values %}',
+        '{% if key == paramName %}',
+        '<div class="btn-group btn-group-xs">',
+        '<button{% if state.enabled %}{% else %} disabled{% endif %} type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">',
+        '<span>{{ param.title }}</span>',
+        '<span class="value">: {{ value }}</span>',
+        '&nbsp;<span class="caret"></span>',
+        '</button>',
+        '<ul class="dropdown-menu {{ paramName }}">',
+        '{% for item in param.items %}',
+        '<li{% if item.id == value %} class="active"{% endif %}>',
+        '<a href="#" data-param="{{ paramName }}" data-id="{{ item.id }}">',
+        '{{ item.title }}',
+        '</a>',
+        '</li>',
+        '{% endfor %}',
+        '</ul>',
+        '</div>&nbsp;',
+        '{% endif %}',
+        '{% endfor %}',
+        '{% endfor %}',
+        '</div>'
+    ].join('');
+
+ymaps.ready(init);
+
+function init() {
+    // Создадим собственный макет RegionControl.
+    var RegionControlLayout = ymaps.templateLayoutFactory.createClass(optionsTemplate, {
+            build: function () {
+                RegionControlLayout.superclass.build.call(this);
+                this.handleClick = ymaps.util.bind(this.handleClick, this);
+                $(this.getParentElement)
+                    .on('click', 'a', this.handleClick);
+            },
+            clear: function () {
+                $(this.getParentElement)
+                    .off('click', 'a', this.handleClick);
+                RegionControlLayout.superclass.clear.call(this);
+            },
+            handleClick: function (e) {
+                e.preventDefault();
+                var $target = $(e.currentTarget);
+                var state = this.getData().state;
+                var newValues = ymaps.util.extend({}, state.get('values'));
+                if (!$target.hasClass('active')) {
+                    newValues[$target.data('param')] = $target.data('id');
+                    state.set('values', newValues);
+                }
+            }
+        }),
+        // Наследуем класс нашего контрола от ymaps.control.Button.
+        RegionControl = ymaps.util.defineClass(function (parameters) {
+            RegionControl.superclass.constructor.call(this, parameters);
+            this.regions = new ymaps.GeoObjectCollection();
+        }, ymaps.control.Button, /** @lends ymaps.control.Button */{
+            onAddToMap: function (map) {
+                RegionControl.superclass.onAddToMap.call(this, map);
+                map.geoObjects.add(this.regions);
+                this.setupStateMonitor();
+                this.loadRegions(this.state.get('values'));
+            },
+
+            onRemoveFromMap: function (map) {
+                map.geoObjects.remove(this.regions);
+                this.clearStateMonitor();
+                RegionControl.superclass.onRemoveFromMap.call(this, map);
+            },
+
+            setupStateMonitor: function () {
+                this.stateMonitor = new ymaps.Monitor(this.state);
+                this.stateMonitor.add('values', this.handleStateChange, this);
+            },
+
+            clearStateMonitor: function () {
+                this.stateMonitor.removeAll();
+            },
+
+            handleStateChange: function (params) {
+                this.loadRegions(params);
+            },
+
+            handleRegionsLoaded: function (res) {
+                this.regions
+                    .removeAll()
+                    .add(res.geoObjects);
+                this.getMap().setBounds(
+                    this.regions.getBounds(),
+                    {checkZoomRange: true}
+                );
+            },
+
+            loadRegions: function (params) {
+                this.disable();
+                return ymaps.regions.load(params.region, params)
+                    .then(this.handleRegionsLoaded, this)
+                    .always(this.enable, this);
+            }
+        }),
+
+        map = new ymaps.Map('map', {
+            center: [50, 30],
+            zoom: 3,
+            controls: ['typeSelector']
+        }, {
+            typeSelectorSize: 'small'
+        }),
+
+        // Создадим экземпляр RegionControl.
+        regionControl = new RegionControl({
+            state: {
+                enabled: true,
+                values: {
+                    region: 'RU',
+                    lang: 'ru',
+                    quality: '1'
+                }
+            },
+            data: {
+                params: REGIONS_DATA
+            },
+            options: {
+                layout: RegionControlLayout
+            },
+            float: 'left',
+            maxWidth: [300]
+        });
 	
-	// Подсветка регионов при наведении на объекты
-	$(function(){
-		$('.focus-region').mouseover(function(){			
-			iso = $(this).prop('id');
-			fregion = {};
-			fregion[iso] = focusRegion;
-			$('#vmap').vectorMap('set', 'colors', fregion);			
-		});
-		$('.focus-region').mouseout(function(){
-			c = $(this).attr('href');			
-			cl = (c === '#')?colorRegion:c;
-			iso = $(this).prop('id');
-			fregion = {};
-			fregion[iso] = cl;
-			$('#vmap').vectorMap('set', 'colors', fregion);
-		});
-	});	
+	    // Добавим контрол на карту.
+    map.controls.add(regionControl);
+    // Узнавать о изменениях параметров RegionControl можно следующим образом.
+    regionControl.events.add('statechange', function (e) {
+        console.log(e.get('target').get('values'));
+    });
+}
 	</script>
-  </head>
-  <body>
-	  <a href="index.html">Назад</a>
-    <div id="vmap" style="width: 800px; height: 500px;"></div>
-	<h3>Подсветка произвольных областей областей</h3>
-	<ul>
-	<li><a href="#" id="sr" class="focus-region">Саратовская область</a></li>
-	<li><a href="#" id="mr" class="focus-region">Республика Мордовия</a></li>
-	<li><a href="#" id="pe" class="focus-region">Пермская область</a></li>
-	<li><a href="#" id="al" class="focus-region">Алтайский край</a></li>
-	</ul>
-	<h3>Подсветка областей заданных в массиве объектов</h3>
-	<ul class="list-object"></ul>
-	<p>Отмеченные регионы: Красноярский край, Новгородская область, Иркутская область</p>
-	
-	
-  </body>
 </html>
